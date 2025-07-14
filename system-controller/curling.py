@@ -45,7 +45,10 @@ def set_lights(colors):
     data_list = [f"{idx},{r},{g},{b}" for idx, (r, g, b) in colors]
     data_str = "|".join(data_list)
     print(f"Setting lights: {data_str}")
-    send_data(data_str.encode('utf-8'))
+    try:
+        send_data(data_str.encode('utf-8'))
+    except Exception as e:
+        print(f"Failed to send data: {e}")
 
 def lights_for_coords(coords):
     # x and y are 0 to 1
@@ -350,6 +353,8 @@ while(video.isOpened()):
                     player2_score += max(0, 10 - int(distance_to_target * 10))
                 if not player1_going:
                     round_number += 1
+                player1_going = not player1_going
+                show_scores(player1_score, player2_score, player1_going, round_number, max_rounds, state, selecting)
                 if round_number > max_rounds:
                     if player1_score > player2_score:
                         print("Player 1 wins!")
@@ -359,6 +364,4 @@ while(video.isOpened()):
                         print("It's a tie!")
                     print(f"Final score: {player1_score} - {player2_score}")
                     break
-                player1_going = not player1_going
-                show_scores(player1_score, player2_score, player1_going, round_number, max_rounds, state, selecting)
                 continue
