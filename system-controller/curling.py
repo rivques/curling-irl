@@ -62,12 +62,34 @@ def lights_for_coords(coords):
 
 lights_setup()
 
+controller.sync("./lib")
+
 @controller.setup
 def controller_setup():
-    from machine import Pin, ADC
+    from machine import Pin, ADC, SPI
+    import gc9a01py as gc9a01
+    import NotoSansMono as font
     slider = ADC(Pin(26))
     button = Pin(0, Pin.IN, Pin.PULL_UP)
+    spi = SPI(0, baudrate=6000000, sck=Pin(2), mosi=Pin(3))
+    tft = gc9a01.GC9A01(
+        spi,
+        dc=Pin(28, Pin.OUT),
+        cs=Pin(1, Pin.OUT),
+        reset=Pin(29, Pin.OUT),
+        rotation=90)
 
+@controller.task
+def show_scores(player1_score, player2_score, player1_going, round_number, max_rounds, state, selecting):
+    tft.fill(gc9a01.color565(0, 0, 0))  # Clear the screen
+    tft.write(font, f"{player1_score} - {player2_score}", 60, 20, gc9a01.color565(255, 255, 255))
+    tft.write(font, f"Round: {round_number}/{max_rounds}", 15, 55, gc9a01.color565(255, 255, 255))
+    tft.write(font, f"P{'1' if player1_going else '2'}'s turn", 10, 90, gc9a01.color565(255, 255, 255))
+    if state == "SHOOTING":
+        tft.write(font, f"P{'1' if player1_going else '2'} shooting", 10, 125, gc9a01.color565(255, 255, 255))
+    else:
+        tft.write(font, f"P{'2' if player1_going else '1'} pick:", 10, 125, gc9a01.color565(255, 255, 255))
+        tft.write(font, f"{selecting} coord", 18, 160, gc9a01.color565(255, 255, 255))
 
 @controller.task
 def get_controller_state_raw():
@@ -195,6 +217,8 @@ if os.path.exists(calibration_file):
 else:
     calibrated = False
 
+show_scores(0, 0, True, 1, 3, state, "X")  # Initial call to display scores
+
 while(video.isOpened()):
     slider_value, button_pressed = get_controller_state()
     if state == "CALIBRATING":
@@ -263,6 +287,8 @@ while(video.isOpened()):
                     selecting = "X"
                     state = "SHOOTING"
                 button_pressed = False
+                show_scores(player1_score, player2_score, player1_going, round_number, max_rounds, state, selecting)
+
         success, frame = video.read()
         if not success:
             break
@@ -331,6 +357,8 @@ while(video.isOpened()):
                         print("Player 2 wins!")
                     else:
                         print("It's a tie!")
+                    print(f"Final score: {player1_score} - {player2_score}")
                     break
                 player1_going = not player1_going
+                show_scores(player1_score, player2_score, player1_going, round_number, max_rounds, state, selecting)
                 continue
