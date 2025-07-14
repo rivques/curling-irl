@@ -1,0 +1,12 @@
+Part,Quantity,Notes
+WeMos ESP32-S2 dev board,2,
+XIAO RP2040,1,
+NeoPixel strip,1,~120 NeoPixels long
+Webcam,1,
+Linear potentiometer,1,
+Keyswitch,1,
+Keycap,1,
+Breadboard,2,
+AprilTag taped to cardstock,1,
+USBC cables,2ish,varies based on setup
+AA battery,3,optional, can use wall power instead
