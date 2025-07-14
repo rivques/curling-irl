@@ -1,0 +1,34 @@
+import network
+import espnow
+from machine import Pin
+
+sta = network.WLAN(network.WLAN.IF_STA)  # Or network.WLAN.IF_AP
+sta.active(True)
+sta.disconnect()
+
+print(f"Active, this board's MAC: {sta.config('mac')}") # b"H'\xe2F\xce\xb6"
+
+e = espnow.ESPNow()
+e.active(True)
+peer = b'\xcc\x8d\xa2\x92p,'   # MAC address of peer's wifi interface
+e.add_peer(peer)      # Must add_peer() before send()
+
+e.send(peer, "Starting...")
+for i in range(10):
+    e.send(peer, str(i)*20, True)
+e.send(peer, b'end')
+
+print("send complete")
+
+button = Pin(0, Pin.IN, Pin.PULL_UP)  # GPIO0 as input with pull-up
+last_button_state = button.value()
+
+print("ready for input")
+
+while True:
+    current_button_state = button.value()
+    if current_button_state != last_button_state:
+        print(f"Button state changed: {current_button_state}")
+        last_button_state = current_button_state
+        e.send(peer, b"0" if current_button_state else b"1")
+    pass
